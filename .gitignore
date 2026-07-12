@@ -1,0 +1,41 @@
+# =========================
+# Python
+# =========================
+backend/venv/
+backend/.env
+**/__pycache__/
+*.py[cod]
+
+# Alembic cache
+backend/alembic/versions/__pycache__/
+
+# =========================
+# React / Node
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Test / Cache
+# =========================
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
