@@ -21,7 +21,10 @@ if config.config_file_name is not None:
 from app.core.config import settings
 from app.core.database import Base
 
-import app.models
+from app.models.company import Company
+from app.models.recruiter import Recruiter
+from app.models.campaign import Campaign
+from app.models.candidate import Candidate
 
 config.set_main_option(
     "sqlalchemy.url",
