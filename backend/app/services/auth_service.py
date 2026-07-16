@@ -1,7 +1,10 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.auth import RecruiterLogin
-
+from app.core.security import verify_access_token
+from app.repositories.auth_repository import (
+    get_recruiter_by_id,
+)
 from app.core.security import (
     hash_password,
     verify_password,
@@ -81,3 +84,21 @@ def login_recruiter(
         "access_token": token,
         "token_type": "bearer",
     }
+def get_current_recruiter(
+    db: Session,
+    token: str,
+):
+    payload = verify_access_token(token)
+
+    recruiter = get_recruiter_by_id(
+        db,
+        payload["id"],
+    )
+
+    if recruiter is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Recruiter not found",
+        )
+
+    return recruiter

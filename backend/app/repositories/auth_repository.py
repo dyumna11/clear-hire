@@ -23,3 +23,13 @@ def create_recruiter(
     db.refresh(recruiter)
 
     return recruiter
+
+def get_recruiter_by_id(
+    db: Session,
+    recruiter_id: int,
+):
+    return (
+        db.query(Recruiter)
+        .filter(Recruiter.id == recruiter_id)
+        .first()
+    )
