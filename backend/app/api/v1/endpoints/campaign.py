@@ -47,20 +47,36 @@ def create_campaign(
     response_model=list[CampaignResponse],
 )
 def get_campaigns(
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    return get_campaigns_service(db)
+    recruiter = get_current_recruiter(
+        db,
+        token,
+    )
+
+    return get_campaigns_service(
+        db,
+        recruiter,
+    )
 @router.get(
     "/{campaign_id}",
     response_model=CampaignResponse,
 )
 def get_campaign(
     campaign_id: int,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
+    recruiter = get_current_recruiter(
+        db,
+        token,
+    )
+
     return get_campaign_service(
         db,
         campaign_id,
+        recruiter,
     )
 @router.put(
     "/{campaign_id}",
@@ -69,21 +85,35 @@ def get_campaign(
 def update_campaign(
     campaign_id: int,
     campaign: CampaignUpdate,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
+    recruiter = get_current_recruiter(
+        db,
+        token,
+    )
+
     return update_campaign_service(
         db,
         campaign_id,
         campaign,
+        recruiter,
     )
 @router.delete("/{campaign_id}")
 def delete_campaign(
     campaign_id: int,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
+    recruiter = get_current_recruiter(
+        db,
+        token,
+    )
+
     success = delete_campaign_service(
         db,
         campaign_id,
+        recruiter,
     )
 
     return {
