@@ -2,28 +2,26 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.campaign import (
-    CampaignCreate,
-    CampaignResponse,
-)
-from app.services.campaign_service import (
-    create_campaign_service,
-)
+from app.models.recruiter import Recruiter
 from app.schemas.campaign import (
     CampaignCreate,
     CampaignResponse,
     CampaignUpdate,
 )
-
+from app.services.auth_service import get_current_recruiter
 from app.services.campaign_service import (
     create_campaign_service,
-    get_campaigns_service,
     get_campaign_service,
+    get_campaigns_service,
     update_campaign_service,
     delete_campaign_service,
 )
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
+from fastapi.security import OAuth2PasswordBearer
 
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/login"
+)
 
 @router.post(
     "/",
@@ -31,9 +29,19 @@ router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 )
 def create_campaign(
     campaign: CampaignCreate,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    return create_campaign_service(db, campaign)
+    recruiter = get_current_recruiter(
+        db,
+        token,
+    )
+
+    return create_campaign_service(
+        db,
+        campaign,
+        recruiter,
+    )
 @router.get(
     "/",
     response_model=list[CampaignResponse],

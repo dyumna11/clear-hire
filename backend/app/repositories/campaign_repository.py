@@ -4,8 +4,15 @@ from app.models.campaign import Campaign
 from app.schemas.campaign import CampaignCreate
 
 
-def create_campaign(db: Session, campaign: CampaignCreate):
-    db_campaign = Campaign(**campaign.model_dump())
+def create_campaign(
+    db: Session,
+    campaign: CampaignCreate,
+    company_id: int,
+):
+    db_campaign = Campaign(
+    **campaign.model_dump(),
+    company_id=company_id,
+)
 
     db.add(db_campaign)
     db.commit()

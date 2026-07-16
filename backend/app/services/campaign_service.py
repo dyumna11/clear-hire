@@ -4,18 +4,18 @@ from app.repositories.campaign_repository import create_campaign
 from app.schemas.campaign import CampaignCreate
 
 
+from app.models.recruiter import Recruiter
+
 def create_campaign_service(
     db: Session,
-    campaign: CampaignCreate
+    campaign: CampaignCreate,
+    recruiter: Recruiter,
 ):
-    return create_campaign(db, campaign)
-from app.repositories.campaign_repository import (
-    get_campaigns,
-    get_campaign_by_id,
-    update_campaign,
-    delete_campaign,
-)
-
+    return create_campaign(
+        db,
+        campaign,
+        recruiter.company_id,
+    )
 
 def get_campaigns_service(db):
     return get_campaigns(db)

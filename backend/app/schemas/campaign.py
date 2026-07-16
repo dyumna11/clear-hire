@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class CampaignCreate(BaseModel):
-    company_id: int
     title: str
     department: str
     assessment_source: str
