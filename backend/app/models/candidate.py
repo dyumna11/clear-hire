@@ -42,3 +42,9 @@ class Candidate(Base):
         "Campaign",
         back_populates="candidates",
     )
+
+    assessments = relationship(
+    "Assessment",
+    back_populates="candidate",
+    cascade="all, delete-orphan",
+)

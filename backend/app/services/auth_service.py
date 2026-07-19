@@ -1,4 +1,5 @@
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from app.core.database import get_db
 from sqlalchemy.orm import Session
 from app.schemas.auth import RecruiterLogin
 from app.core.security import verify_access_token
@@ -89,8 +90,8 @@ def login_recruiter(
         "token_type": "bearer",
     }
 def get_current_recruiter(
-    db: Session,
-    token: str,
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
 ):
     payload = verify_access_token(token)
 
