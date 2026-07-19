@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from app.models.candidate import Candidate
+
 
 from app.core.database import Base
 
@@ -51,5 +53,5 @@ class Campaign(Base):
     candidates = relationship(
     "Candidate",
     back_populates="campaign",
-    cascade="all, delete-orphan"
+    cascade="all, delete-orphan",
 )

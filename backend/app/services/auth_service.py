@@ -16,7 +16,11 @@ from app.repositories.auth_repository import (
     get_recruiter_by_email,
 )
 from app.schemas.auth import RecruiterRegister
+from fastapi.security import OAuth2PasswordBearer
 
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/login",
+)
 
 def register_recruiter(
     db: Session,

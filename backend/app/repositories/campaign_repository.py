@@ -1,24 +1,17 @@
 from sqlalchemy.orm import Session
 
 from app.models.campaign import Campaign
-from app.schemas.campaign import CampaignCreate
 
 
 def create_campaign(
     db: Session,
-    campaign: CampaignCreate,
-    company_id: int,
+    campaign: Campaign,
 ):
-    db_campaign = Campaign(
-    **campaign.model_dump(),
-    company_id=company_id,
-)
-
-    db.add(db_campaign)
+    db.add(campaign)
     db.commit()
-    db.refresh(db_campaign)
+    db.refresh(campaign)
+    return campaign
 
-    return db_campaign
 
 def get_campaigns(
     db: Session,
