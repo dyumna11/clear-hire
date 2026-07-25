@@ -18,7 +18,7 @@ class EvaluationBase(BaseModel):
     confidence_score: float
 
 
-class EvaluationCreate(EvaluationBase):
+class EvaluationCreate(BaseModel):
     assessment_id: int
 
 

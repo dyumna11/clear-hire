@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from app.services.ai_evaluation_service import generate_evaluation
 
 from app.models.assessment import Assessment
 from app.models.campaign import Campaign
@@ -24,6 +25,7 @@ def create_new_evaluation(
     evaluation: EvaluationCreate,
     recruiter: Recruiter,
 ):
+    # Fetch assessment
     assessment = (
         db.query(Assessment)
         .join(Candidate)
@@ -41,11 +43,10 @@ def create_new_evaluation(
             detail="Assessment not found",
         )
 
+    # Prevent duplicate evaluation
     existing = (
         db.query(Evaluation)
-        .filter(
-            Evaluation.assessment_id == evaluation.assessment_id
-        )
+        .filter(Evaluation.assessment_id == assessment.id)
         .first()
     )
 
@@ -55,8 +56,20 @@ def create_new_evaluation(
             detail="Evaluation already exists for this assessment.",
         )
 
+    # Generate evaluation
+    generated = generate_evaluation(assessment)
+
+    # Create database object
     new_evaluation = Evaluation(
-        **evaluation.model_dump()
+        assessment_id=assessment.id,
+        technical_rating=generated["technical_rating"],
+        problem_solving_rating=generated["problem_solving_rating"],
+        communication_rating=generated["communication_rating"],
+        strengths=generated["strengths"],
+        weaknesses=generated["weaknesses"],
+        recommendation=generated["recommendation"],
+        reasoning=generated["reasoning"],
+        confidence_score=generated["confidence_score"],
     )
 
     return create_evaluation(db, new_evaluation)
