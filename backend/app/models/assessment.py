@@ -73,3 +73,9 @@ class Assessment(Base):
         "Candidate",
         back_populates="assessments",
     )
+    evaluation = relationship(
+    "Evaluation",
+    back_populates="assessment",
+    uselist=False,
+    cascade="all, delete-orphan",
+)
