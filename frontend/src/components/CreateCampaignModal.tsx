@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import {
@@ -86,8 +86,9 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
   const [logicProtected, setLogicProtected] = useState(true)
 
   // Synchronize Preset choices with visibility toggles
-  useEffect(() => {
-    if (activePreset === 'Minimal') {
+  const handlePresetChange = (preset: Preset) => {
+    setActivePreset(preset)
+    if (preset === 'Minimal') {
       setTimelineShared(true)
       setCategoriesShared(false)
       setStrengthsShared(false)
@@ -105,7 +106,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
       setNotesProtected(true)
       setCommentsProtected(true)
       setLogicProtected(true)
-    } else if (activePreset === 'Balanced') {
+    } else if (preset === 'Balanced') {
       setTimelineShared(true)
       setCategoriesShared(true)
       setStrengthsShared(true)
@@ -123,7 +124,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
       setNotesProtected(true)
       setCommentsProtected(true)
       setLogicProtected(true)
-    } else if (activePreset === 'Transparent') {
+    } else if (preset === 'Transparent') {
       setTimelineShared(true)
       setCategoriesShared(true)
       setStrengthsShared(true)
@@ -142,7 +143,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
       setCommentsProtected(true)
       setLogicProtected(true)
     }
-  }, [activePreset])
+  }
 
   if (!isOpen) return null
 
@@ -572,7 +573,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
                         <button
                           key={p.name}
                           type="button"
-                          onClick={() => setActivePreset(p.name as Preset)}
+                          onClick={() => handlePresetChange(p.name as Preset)}
                           className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                             activePreset === p.name
                               ? 'border-primary bg-primary/10 text-primary'

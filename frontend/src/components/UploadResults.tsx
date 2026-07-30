@@ -68,19 +68,25 @@ export default function UploadResults({ campaignName, onBack, onContinue }: Uplo
   useEffect(() => {
     if (uploadProgress !== null && uploadProgress < 100) {
       const timer = setTimeout(() => {
-        setUploadProgress((prev) => (prev !== null ? prev + 10 : 0))
+        setUploadProgress((prev) => {
+          if (prev === null) return 0
+          const next = prev + 10
+          if (next >= 100) {
+            setFileDetails({
+              name: 'engineering_oa_results.csv',
+              size: '42.5 KB',
+              rows: 148,
+              cols: 6,
+              candidates: 148
+            })
+            return 100
+          }
+          return next
+        })
       }, 150)
       return () => clearTimeout(timer)
-    } else if (uploadProgress === 100 && !fileDetails) {
-      setFileDetails({
-        name: 'engineering_oa_results.csv',
-        size: '42.5 KB',
-        rows: 148,
-        cols: 6,
-        candidates: 148
-      })
     }
-  }, [uploadProgress, fileDetails])
+  }, [uploadProgress])
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -98,11 +104,13 @@ export default function UploadResults({ campaignName, onBack, onContinue }: Uplo
     setIsDragging(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       // Trigger upload loader
+      setFileDetails(null)
       setUploadProgress(0)
     }
   }
 
   const handleFileSelect = () => {
+    setFileDetails(null)
     setUploadProgress(0)
   }
 

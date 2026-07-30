@@ -2,10 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.services.auth_service import (
-    get_current_recruiter,
-    oauth2_scheme,
-)
+from app.models.recruiter import Recruiter
+from app.services.auth_service import get_current_recruiter
 from app.schemas.candidate import (
     CandidateCreate,
     CandidateResponse,
@@ -25,11 +23,9 @@ router = APIRouter(prefix="/candidates", tags=["Candidates"])
 @router.post("/", response_model=CandidateResponse)
 def create_candidate(
     candidate: CandidateCreate,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(db, token)
-
     result = create_candidate_service(
         db,
         candidate,
@@ -51,11 +47,9 @@ def create_candidate(
 )
 def get_candidates(
     campaign_id: int,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(db, token)
-
     return get_candidates_service(
         db,
         campaign_id,
@@ -70,11 +64,9 @@ def get_candidates(
 def get_candidate(
     candidate_id: int,
     campaign_id: int,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(db, token)
-
     candidate = get_candidate_service(
         db,
         candidate_id,
@@ -99,11 +91,9 @@ def update_candidate(
     candidate_id: int,
     campaign_id: int,
     candidate: CandidateUpdate,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(db, token)
-
     result = update_candidate_service(
         db,
         candidate_id,
@@ -125,11 +115,9 @@ def update_candidate(
 def delete_candidate(
     candidate_id: int,
     campaign_id: int,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(db, token)
-
     success = delete_candidate_service(
         db,
         candidate_id,

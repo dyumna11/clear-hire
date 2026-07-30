@@ -16,12 +16,12 @@ from app.services.campaign_service import (
     update_campaign_service,
     delete_campaign_service,
 )
-router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
-from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
+router = APIRouter(
+    prefix="/campaigns",
+    tags=["Campaigns"],
 )
+
 
 @router.post(
     "/",
@@ -29,55 +29,46 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 def create_campaign(
     campaign: CampaignCreate,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(
-        db,
-        token,
-    )
-
     return create_campaign_service(
         db,
         campaign,
         recruiter,
     )
+
+
 @router.get(
     "/",
     response_model=list[CampaignResponse],
 )
 def get_campaigns(
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(
-        db,
-        token,
-    )
-
     return get_campaigns_service(
         db,
         recruiter,
     )
+
+
 @router.get(
     "/{campaign_id}",
     response_model=CampaignResponse,
 )
 def get_campaign(
     campaign_id: int,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(
-        db,
-        token,
-    )
-
     return get_campaign_service(
         db,
         campaign_id,
         recruiter,
     )
+
+
 @router.put(
     "/{campaign_id}",
     response_model=CampaignResponse,
@@ -85,31 +76,23 @@ def get_campaign(
 def update_campaign(
     campaign_id: int,
     campaign: CampaignUpdate,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(
-        db,
-        token,
-    )
-
     return update_campaign_service(
         db,
         campaign_id,
         campaign,
         recruiter,
     )
+
+
 @router.delete("/{campaign_id}")
 def delete_campaign(
     campaign_id: int,
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    recruiter = get_current_recruiter(
-        db,
-        token,
-    )
-
     success = delete_campaign_service(
         db,
         campaign_id,
@@ -117,5 +100,5 @@ def delete_campaign(
     )
 
     return {
-        "success": success
+        "success": success,
     }

@@ -2,19 +2,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.core.database import get_db
+from app.models.recruiter import Recruiter
 from app.services.auth_service import (
     get_current_recruiter,
+    register_recruiter,
+    login_recruiter,
 )
 from app.schemas.auth import (
     RecruiterRegister,
     RecruiterResponse,
     RecruiterLogin,
     Token,
-)
-
-from app.services.auth_service import (
-    register_recruiter,
-    login_recruiter,
 )
 
 router = APIRouter(
@@ -35,6 +33,8 @@ def register(
         db,
         recruiter,
     )
+
+
 @router.post(
     "/login",
     response_model=Token,
@@ -52,18 +52,14 @@ def login(
         db,
         recruiter,
     )
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
-)
+
+
+
 @router.get(
     "/me",
     response_model=RecruiterResponse,
 )
 def me(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
 ):
-    return get_current_recruiter(
-        db,
-        token,
-    )
+    return recruiter
