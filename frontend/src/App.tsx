@@ -12,10 +12,12 @@ import Vision from './components/Vision'
 import FAQ from './components/FAQ'
 import Footer from './components/Footer'
 import RecruiterDashboard from './components/RecruiterDashboard'
+import CandidateFeedback from './components/CandidateFeedback'
 
 export default function App() {
-  // App views: 'landing' or 'recruiter' (the recruiter dashboard workspace)
-  const [view, setView] = useState<'landing' | 'recruiter'>('landing')
+  // App views: 'landing', 'recruiter', or 'candidate-feedback'
+  const [view, setView] = useState<'landing' | 'recruiter' | 'candidate-feedback'>('landing')
+  const [candidateRouteParams, setCandidateRouteParams] = useState<{ assessmentId: number; token: string } | null>(null)
 
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -34,6 +36,19 @@ export default function App() {
     }
   }, [darkMode])
 
+  // Parse path to support direct feedback URL routing
+  useEffect(() => {
+    const path = window.location.pathname
+    const match = path.match(/\/candidate\/assessments\/(\d+)\/feedback/i)
+    if (match) {
+      const assessmentId = parseInt(match[1], 10)
+      const params = new URLSearchParams(window.location.search)
+      const token = params.get('token') || ''
+      setCandidateRouteParams({ assessmentId, token })
+      setView('candidate-feedback')
+    }
+  }, [])
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
   }
@@ -46,7 +61,18 @@ export default function App() {
 
   const handleGoToHome = () => {
     setView('landing')
+    window.history.pushState({}, '', '/')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (view === 'candidate-feedback' && candidateRouteParams) {
+    return (
+      <CandidateFeedback
+        assessmentId={candidateRouteParams.assessmentId}
+        token={candidateRouteParams.token}
+        onGoToHome={handleGoToHome}
+      />
+    )
   }
 
   if (view === 'recruiter') {

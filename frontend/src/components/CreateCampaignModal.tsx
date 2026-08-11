@@ -27,6 +27,12 @@ interface CreateCampaignModalProps {
     candidates: number
     reportsGenerated: string
     transparencyScore: number
+    title?: string
+    department?: string
+    assessment_source?: string
+    job_description?: string
+    hiring_notes?: string
+    evaluation_parameters?: any
   }) => void
 }
 
@@ -46,6 +52,18 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
   const [desc, setDesc] = useState('We are looking for a backend engineer with strong recursion and system design basics...')
   const [timeline, setTimeline] = useState('Oct 10 - Oct 24')
   const [deadline, setDeadline] = useState('2026-10-24')
+  const [hiringNotes, setHiringNotes] = useState('')
+
+  // Manual parameters state
+  const [useManualParams, setUseManualParams] = useState(false)
+  const [weightTechnical, setWeightTechnical] = useState(40)
+  const [weightProblemSolving, setWeightProblemSolving] = useState(30)
+  const [weightCommunication, setWeightCommunication] = useState(15)
+  const [weightProjects, setWeightProjects] = useState(15)
+  const [minCoding, setMinCoding] = useState(70)
+  const [minOverall, setMinOverall] = useState(70)
+  const [mandatorySkillsText, setMandatorySkillsText] = useState('Python, SQL, DSA')
+  const [preferredSkillsText, setPreferredSkillsText] = useState('React, FastAPI')
 
   // Step 2: Assessment Source State
   const [source, setSource] = useState('HackerRank')
@@ -212,12 +230,36 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
   }
 
   const handlePublish = () => {
+    let evaluation_parameters = null
+    if (useManualParams) {
+      evaluation_parameters = {
+        weights: {
+          technical: Number(weightTechnical),
+          problem_solving: Number(weightProblemSolving),
+          communication: Number(weightCommunication),
+          projects: Number(weightProjects),
+        },
+        minimum_scores: {
+          coding: Number(minCoding),
+          overall: Number(minOverall),
+        },
+        mandatory_skills: mandatorySkillsText.split(',').map(s => s.trim()).filter(Boolean),
+        preferred_skills: preferredSkillsText.split(',').map(s => s.trim()).filter(Boolean),
+      }
+    }
+
     onCreate({
       role,
       status: 'Active',
       candidates,
       reportsGenerated: `0/${candidates}`,
       transparencyScore: score,
+      title: role,
+      department: department,
+      assessment_source: source,
+      job_description: desc,
+      hiring_notes: hiringNotes,
+      evaluation_parameters: evaluation_parameters,
     })
     onClose()
   }
@@ -398,6 +440,118 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
                         className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
                       />
                     </div>
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Hiring Notes</label>
+                      <textarea
+                        rows={2}
+                        value={hiringNotes}
+                        onChange={(e) => setHiringNotes(e.target.value)}
+                        placeholder="Internal notes on hiring priorities, technical specifics..."
+                        className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-2 pt-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="useManualParams"
+                        checked={useManualParams}
+                        onChange={(e) => setUseManualParams(e.target.checked)}
+                        className="w-4 h-4 rounded text-primary focus:ring-primary border-gray-300 dark:border-zinc-800 dark:bg-zinc-900"
+                      />
+                      <label htmlFor="useManualParams" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                        Define Manual Evaluation Criteria (Weights & Score Thresholds)
+                      </label>
+                    </div>
+
+                    {useManualParams && (
+                      <div className="col-span-2 border border-gray-150 dark:border-zinc-900 rounded-2xl p-4 bg-zinc-50/50 dark:bg-zinc-950/20 space-y-4 grid grid-cols-2 gap-4">
+                        <div className="col-span-2 text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                          Recruiter-Defined Criteria
+                        </div>
+                        
+                        <div className="space-y-1.5 col-span-2">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Category Weights (Sum to 100)</label>
+                          <div className="grid grid-cols-4 gap-2">
+                            <div>
+                              <span className="text-[9px] text-zinc-400 block mb-0.5">Technical %</span>
+                              <input
+                                type="number"
+                                value={weightTechnical}
+                                onChange={(e) => setWeightTechnical(Number(e.target.value))}
+                                className="w-full text-xs px-2.5 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-zinc-400 block mb-0.5">Problem Solv %</span>
+                              <input
+                                type="number"
+                                value={weightProblemSolving}
+                                onChange={(e) => setWeightProblemSolving(Number(e.target.value))}
+                                className="w-full text-xs px-2.5 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-zinc-400 block mb-0.5">Comm %</span>
+                              <input
+                                type="number"
+                                value={weightCommunication}
+                                onChange={(e) => setWeightCommunication(Number(e.target.value))}
+                                className="w-full text-xs px-2.5 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-zinc-400 block mb-0.5">Projects %</span>
+                              <input
+                                type="number"
+                                value={weightProjects}
+                                onChange={(e) => setWeightProjects(Number(e.target.value))}
+                                className="w-full text-xs px-2.5 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Min Coding Score</label>
+                          <input
+                            type="number"
+                            value={minCoding}
+                            onChange={(e) => setMinCoding(Number(e.target.value))}
+                            className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Min Overall Score</label>
+                          <input
+                            type="number"
+                            value={minOverall}
+                            onChange={(e) => setMinOverall(Number(e.target.value))}
+                            className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 col-span-2">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Mandatory Skills (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={mandatorySkillsText}
+                            onChange={(e) => setMandatorySkillsText(e.target.value)}
+                            className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 col-span-2">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Preferred Skills (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={preferredSkillsText}
+                            onChange={(e) => setPreferredSkillsText(e.target.value)}
+                            className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
