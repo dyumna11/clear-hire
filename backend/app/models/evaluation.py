@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, Text, DateTime, Float
+from sqlalchemy import ForeignKey, String, Text, DateTime, Float, JSON, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -28,6 +28,42 @@ class Evaluation(Base):
     reasoning: Mapped[str] = mapped_column(Text)
 
     confidence_score: Mapped[float]
+
+    match_percentage: Mapped[float] = mapped_column(
+        Float,
+        default=0.0,
+    )
+
+    matched_skills: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+    )
+
+    missing_skills: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+    )
+
+    mandatory_requirements_met: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    rubric_version: Mapped[int | None] = mapped_column(
+        Integer,
+        default=1,
+    )
+
+    personalized_feedback: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    suggested_topics: Mapped[list | None] = mapped_column(
+        JSON,
+        nullable=True,
+        default=list,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

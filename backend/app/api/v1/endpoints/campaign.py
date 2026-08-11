@@ -7,6 +7,7 @@ from app.schemas.campaign import (
     CampaignCreate,
     CampaignResponse,
     CampaignUpdate,
+    RubricUpdate,
 )
 from app.services.auth_service import get_current_recruiter
 from app.services.campaign_service import (
@@ -15,6 +16,9 @@ from app.services.campaign_service import (
     get_campaigns_service,
     update_campaign_service,
     delete_campaign_service,
+    generate_rubric_service,
+    update_rubric_service,
+    approve_rubric_service,
 )
 
 router = APIRouter(
@@ -102,3 +106,53 @@ def delete_campaign(
     return {
         "success": success,
     }
+
+
+@router.post(
+    "/{campaign_id}/generate-rubric",
+    response_model=CampaignResponse,
+)
+def generate_rubric(
+    campaign_id: int,
+    db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
+):
+    return generate_rubric_service(
+        db,
+        campaign_id,
+        recruiter,
+    )
+
+
+@router.put(
+    "/{campaign_id}/rubric",
+    response_model=CampaignResponse,
+)
+def update_rubric(
+    campaign_id: int,
+    rubric: RubricUpdate,
+    db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
+):
+    return update_rubric_service(
+        db,
+        campaign_id,
+        rubric,
+        recruiter,
+    )
+
+
+@router.post(
+    "/{campaign_id}/rubric/approve",
+    response_model=CampaignResponse,
+)
+def approve_rubric(
+    campaign_id: int,
+    db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
+):
+    return approve_rubric_service(
+        db,
+        campaign_id,
+        recruiter,
+    )

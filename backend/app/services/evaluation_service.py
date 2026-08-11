@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.services.ai_evaluation_service import generate_evaluation
 
 from app.models.assessment import Assessment
@@ -25,9 +25,10 @@ def create_new_evaluation(
     evaluation: EvaluationCreate,
     recruiter: Recruiter,
 ):
-    # Fetch assessment
+    # Fetch assessment with candidate and campaign eagerly loaded
     assessment = (
         db.query(Assessment)
+        .options(joinedload(Assessment.candidate).joinedload(Candidate.campaign))
         .join(Candidate)
         .join(Campaign)
         .filter(
@@ -41,6 +42,19 @@ def create_new_evaluation(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Assessment not found",
+        )
+
+    # Check if hiring rubric exists and is approved on the campaign
+    campaign = assessment.candidate.campaign if assessment.candidate else None
+    if not campaign or not campaign.evaluation_rubric:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hiring rubric has not been generated for this campaign yet. Please generate the rubric first.",
+        )
+    if campaign.rubric_status != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hiring rubric has not been approved for this campaign yet. Please approve the rubric first.",
         )
 
     # Prevent duplicate evaluation
@@ -59,6 +73,9 @@ def create_new_evaluation(
     # Generate evaluation
     generated = generate_evaluation(assessment)
 
+    # Get rubric version used
+    rubric_version = campaign.rubric_version or 0
+
     # Create database object
     new_evaluation = Evaluation(
         assessment_id=assessment.id,
@@ -70,6 +87,13 @@ def create_new_evaluation(
         recommendation=generated["recommendation"],
         reasoning=generated["reasoning"],
         confidence_score=generated["confidence_score"],
+        match_percentage=generated.get("match_percentage", 0.0),
+        matched_skills=generated.get("matched_skills", []),
+        missing_skills=generated.get("missing_skills", []),
+        mandatory_requirements_met=generated.get("mandatory_requirements_met", True),
+        rubric_version=rubric_version,
+        personalized_feedback=generated.get("personalized_feedback"),
+        suggested_topics=generated.get("suggested_topics", []),
     )
 
     return create_evaluation(db, new_evaluation)

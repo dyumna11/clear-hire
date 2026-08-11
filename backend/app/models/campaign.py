@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, JSON, String
+from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.models.candidate import Candidate
@@ -38,6 +38,48 @@ class Campaign(Base):
     evaluation_mapping: Mapped[dict] = mapped_column(
         JSON,
         default=dict
+    )
+
+    job_description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    hiring_notes: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    evaluation_parameters: Mapped[dict | None] = mapped_column(
+        JSON,
+        nullable=True
+    )
+
+    evaluation_rubric: Mapped[dict | None] = mapped_column(
+        JSON,
+        nullable=True
+    )
+
+    rubric_status: Mapped[str | None] = mapped_column(
+        String(50),
+        default="draft",
+        nullable=True
+    )
+
+    rubric_version: Mapped[int | None] = mapped_column(
+        Integer,
+        default=0,
+        nullable=True
+    )
+
+    rubric_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    rubric_approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(

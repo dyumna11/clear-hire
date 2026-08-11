@@ -4,3 +4,4 @@ from .campaign import Campaign
 from .candidate import Candidate
 from .assessment import Assessment
 from .evaluation import Evaluation
+from .candidate_access_token import CandidateAccessToken

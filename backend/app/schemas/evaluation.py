@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,6 +16,14 @@ class EvaluationBase(BaseModel):
     reasoning: str
 
     confidence_score: float
+
+    match_percentage: float = 0.0
+    matched_skills: List[str] = []
+    missing_skills: List[str] = []
+    mandatory_requirements_met: bool = True
+    rubric_version: Optional[int] = None
+    personalized_feedback: Optional[str] = None
+    suggested_topics: List[str] = []
 
 
 class EvaluationCreate(BaseModel):
@@ -35,6 +43,14 @@ class EvaluationUpdate(BaseModel):
 
     confidence_score: Optional[float] = None
 
+    match_percentage: Optional[float] = None
+    matched_skills: Optional[List[str]] = None
+    missing_skills: Optional[List[str]] = None
+    mandatory_requirements_met: Optional[bool] = None
+    rubric_version: Optional[int] = None
+    personalized_feedback: Optional[str] = None
+    suggested_topics: Optional[List[str]] = None
+
 
 class EvaluationResponse(EvaluationBase):
     id: int
@@ -42,3 +58,12 @@ class EvaluationResponse(EvaluationBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CandidateFeedbackResponse(BaseModel):
+    overall_score: int
+    score_breakdown: dict
+    strengths: str
+    areas_for_improvement: str
+    personalized_feedback: str
+    suggested_topics: List[str]

@@ -18,6 +18,8 @@ from app.services.assessment_service import (
 )
 from app.services.auth_service import get_current_recruiter
 from app.models.recruiter import Recruiter
+from app.schemas.candidate_access_token import CandidateAccessTokenResponse
+from app.services.candidate_token_service import generate_feedback_token_service
 
 router = APIRouter(prefix="/assessments", tags=["Assessments"])
 
@@ -81,6 +83,22 @@ def delete_assessment(
     recruiter: Recruiter = Depends(get_current_recruiter),
 ):
     return delete_existing_assessment(
+        db,
+        assessment_id,
+        recruiter,
+    )
+
+
+@router.post(
+    "/{assessment_id}/feedback-token",
+    response_model=CandidateAccessTokenResponse,
+)
+def generate_feedback_token(
+    assessment_id: int,
+    db: Session = Depends(get_db),
+    recruiter: Recruiter = Depends(get_current_recruiter),
+):
+    return generate_feedback_token_service(
         db,
         assessment_id,
         recruiter,
