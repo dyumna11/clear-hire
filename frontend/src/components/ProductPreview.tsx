@@ -1,9 +1,41 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutDashboard, Users, FileBarChart2, Settings, Database, Check, Lock, BookOpen } from 'lucide-react'
 
-export default function ProductPreview() {
+interface ProductPreviewProps {
+  onNavigateToFeedback?: (assessmentId: number, token: string) => void
+}
+
+export default function ProductPreview({ onNavigateToFeedback }: ProductPreviewProps) {
   const [activeTab, setActiveTab] = useState<'candidate' | 'recruiter'>('candidate')
+
+  // Check for feedback token to enable live feedback redirection CTA
+  const [assessmentId, setAssessmentId] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const urlAssessmentId = searchParams.get('assessment_id') || searchParams.get('assessmentId')
+    const urlToken = searchParams.get('token')
+
+    const localAssessmentId = localStorage.getItem('candidate_assessment_id')
+    const localToken = localStorage.getItem('candidate_feedback_token')
+
+    setAssessmentId(urlAssessmentId || localAssessmentId)
+    setToken(urlToken || localToken)
+  }, [activeTab])
+
+  const hasFeedbackToken = !!(assessmentId && token)
+
+  const handleViewRealFeedback = () => {
+    if (assessmentId && token) {
+      if (onNavigateToFeedback) {
+        onNavigateToFeedback(parseInt(assessmentId, 10), token)
+      } else {
+        window.location.href = `/candidate/assessments/${assessmentId}/feedback?token=${encodeURIComponent(token)}`
+      }
+    }
+  }
 
   return (
     <section id="product-preview" className="py-20 md:py-28 bg-white dark:bg-zinc-950 relative overflow-hidden">
@@ -12,13 +44,13 @@ export default function ProductPreview() {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-12 md:mb-16">
           <span className="text-xs font-bold uppercase tracking-wider text-primary px-3 py-1 rounded-full bg-primary/5 dark:bg-primary/10 border border-primary/10">
-            Product Showcase
+            Product Preview
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-bold text-zinc-900 dark:text-white">
-            Dual-Portal Ecosystem
+            Candidate Experience Preview
           </h2>
           <p className="text-zinc-500 dark:text-zinc-400">
-            A look into the dashboards designed to coordinate transparent campaign outcomes for talent managers and job applicants.
+            An illustrative preview of the recruiter administration console and the candidate feedback dashboards.
           </p>
         </div>
 
@@ -33,7 +65,7 @@ export default function ProductPreview() {
                   : 'text-zinc-500 hover:text-zinc-850 dark:hover:text-zinc-300'
               }`}
             >
-              Candidate Portal View
+              Candidate Portal Preview
             </button>
             <button
               onClick={() => setActiveTab('recruiter')}
@@ -43,7 +75,7 @@ export default function ProductPreview() {
                   : 'text-zinc-500 hover:text-zinc-850 dark:hover:text-zinc-300'
               }`}
             >
-              Recruiter Portal View
+              Recruiter Portal Preview
             </button>
           </div>
         </div>
@@ -62,8 +94,11 @@ export default function ProductPreview() {
               >
                 {/* Mock sidebar */}
                 <div className="md:col-span-3 border-r border-gray-100 dark:border-zinc-900 p-5 space-y-6 bg-zinc-50/30 dark:bg-zinc-950/20">
-                  <div className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
-                    CANDIDATE SUITE
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-bold text-primary tracking-widest uppercase block">Product Preview</span>
+                    <div className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
+                      Candidate Portal Preview
+                    </div>
                   </div>
                   <nav className="space-y-1.5">
                     {[
@@ -91,20 +126,49 @@ export default function ProductPreview() {
                 <div className="md:col-span-9 p-6 md:p-8 space-y-6">
                   <div className="flex justify-between items-center pb-4 border-b border-gray-150 dark:border-zinc-900">
                     <div>
-                      <span className="text-[10px] font-bold text-accent uppercase tracking-wider block">APPLICATION OVERVIEW</span>
+                      <span className="text-[10px] font-bold text-accent uppercase tracking-wider block">APPLICATION OVERVIEW (ILLUSTRATIVE PREVIEW)</span>
                       <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white mt-0.5">
                         My Job Applications
                       </h3>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                      Last update: Oct 2026
+                      Illustrative Sample Data
                     </span>
+                  </div>
+
+                  {/* Subtle disclaimer banner & CTA */}
+                  <div className="bg-amber-500/10 border border-amber-500/20 text-zinc-800 dark:text-zinc-300 rounded-xl p-3.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-amber-600 dark:text-amber-400 uppercase text-[9px] tracking-wider block">Illustrative Preview Mode</span>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        The candidate details, scores, and roadmap displayed below are mock demonstration values and do not represent real candidate data.
+                      </p>
+                    </div>
+                    {hasFeedbackToken ? (
+                      <button
+                        onClick={handleViewRealFeedback}
+                        className="bg-primary hover:bg-primary/95 text-white px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm flex items-center gap-1 hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap self-start sm:self-auto"
+                      >
+                        View Candidate Experience
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="bg-zinc-150 dark:bg-zinc-850 text-zinc-450 dark:text-zinc-500 border border-zinc-200/50 dark:border-zinc-805/80 px-3.5 py-1.5 rounded-lg text-[10px] font-semibold cursor-not-allowed whitespace-nowrap self-start sm:self-auto"
+                        title="Generate a feedback link in the Recruiter Dashboard to test the live portal view."
+                      >
+                        See Feedback (Locked)
+                      </button>
+                    )}
                   </div>
 
                   {/* Mock content blocks representing PRD details */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     
-                    <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900 space-y-3.5">
+                    <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900 space-y-3.5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-[8px] text-zinc-400 dark:text-zinc-500 rounded-bl border-l border-b border-gray-150 dark:border-zinc-900 font-mono">
+                        Sample Data
+                      </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-bold text-zinc-400 uppercase tracking-wide">STATUS</span>
                         <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950 text-red-500 font-bold text-[10px]">
@@ -119,16 +183,19 @@ export default function ProductPreview() {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900 space-y-3">
+                    <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900 space-y-3 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-[8px] text-zinc-400 dark:text-zinc-500 rounded-bl border-l border-b border-gray-150 dark:border-zinc-900 font-mono">
+                        Sample Data
+                      </div>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block">EVALUATION METRICS</span>
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span>Coding accuracy</span>
-                          <span className="font-bold">85%</span>
+                          <span className="font-bold text-zinc-550">85%</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Runtime optimization</span>
-                          <span className="font-bold">60%</span>
+                          <span className="font-bold text-zinc-550">60%</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Computer Science fundamentals</span>
@@ -140,7 +207,10 @@ export default function ProductPreview() {
                   </div>
 
                   {/* Strengths / Growth Areas */}
-                  <div className="p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/15 space-y-3.5 text-xs">
+                  <div className="p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/15 space-y-3.5 text-xs relative overflow-hidden">
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-[8px] text-zinc-400 dark:text-zinc-500 rounded-bl border-l border-b border-gray-150 dark:border-zinc-900 font-mono">
+                      Sample Data
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <span className="font-bold text-zinc-400 block mb-1 uppercase text-[10px]">STRENGTHS</span>
@@ -160,7 +230,10 @@ export default function ProductPreview() {
                   </div>
 
                   {/* Learning roadmap */}
-                  <div className="p-4 rounded-xl bg-accent/5 dark:bg-accent/10 border border-accent/15 flex items-center justify-between text-xs">
+                  <div className="p-4 rounded-xl bg-accent/5 dark:bg-accent/10 border border-accent/15 flex items-center justify-between text-xs relative overflow-hidden">
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-900 text-[8px] text-zinc-400 dark:text-zinc-500 rounded-bl border-l border-b border-gray-150 dark:border-zinc-900 font-mono">
+                      Sample Data
+                    </div>
                     <div className="space-y-1">
                       <span className="font-bold text-zinc-400 uppercase text-[10px]">RECOMMENDED LEARNING ROADMAP</span>
                       <div className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold">SQL &bull; Operating Systems &bull; Concurrency</div>
@@ -182,10 +255,13 @@ export default function ProductPreview() {
               >
                 {/* Mock sidebar */}
                 <div className="md:col-span-3 border-r border-gray-100 dark:border-zinc-900 p-5 space-y-6 bg-zinc-50/30 dark:bg-zinc-950/20">
-                  <div className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
-                    RECRUITER SUITE
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-bold text-primary tracking-widest uppercase block">Product Preview</span>
+                    <div className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
+                      Recruiter Portal Preview
                   </div>
-                  <nav className="space-y-1.5">
+                </div>
+                <nav className="space-y-1.5">
                     {[
                       { name: 'Campaign Overview', icon: <LayoutDashboard className="w-4 h-4 text-primary" />, active: true },
                       { name: 'Rubric Builder', icon: <Settings className="w-4 h-4" /> },

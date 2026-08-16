@@ -371,6 +371,9 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
       const data = await api.generateFeedbackToken(assessmentId)
       const tokenLink = `${window.location.origin}/candidate/assessments/${assessmentId}/feedback?token=${data.token}`
       setShareTokenText(tokenLink)
+      // Save it to localStorage for preview access on the landing page
+      localStorage.setItem('candidate_assessment_id', String(assessmentId))
+      localStorage.setItem('candidate_feedback_token', data.token)
     } catch (err: any) {
       alert(err.message || 'Failed to generate token')
     } finally {

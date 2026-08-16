@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class EvaluationBase(BaseModel):
@@ -24,6 +24,13 @@ class EvaluationBase(BaseModel):
     rubric_version: Optional[int] = None
     personalized_feedback: Optional[str] = None
     suggested_topics: List[str] = []
+
+    @field_validator("suggested_topics", "matched_skills", "missing_skills", mode="before")
+    @classmethod
+    def coerce_none_to_list(cls, v):
+        if v is None:
+            return []
+        return v
 
 
 class EvaluationCreate(BaseModel):

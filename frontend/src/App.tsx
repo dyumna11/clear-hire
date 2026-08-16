@@ -118,7 +118,14 @@ export default function App() {
         <HiringDnaCard />
 
         {/* Double Dashboard visual portal displays */}
-        <ProductPreview />
+        <ProductPreview
+          onNavigateToFeedback={(assessmentId, token) => {
+            setCandidateRouteParams({ assessmentId, token })
+            setView('candidate-feedback')
+            window.history.pushState({}, '', `/candidate/assessments/${assessmentId}/feedback?token=${encodeURIComponent(token)}`)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        />
 
         {/* Corporate transparency pipeline vision */}
         <Vision />
