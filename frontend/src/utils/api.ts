@@ -254,4 +254,47 @@ export const api = {
     });
     return handleResponse(res);
   },
+
+  // Integrations / External Assessments
+  async importExternalAssessment(payload: Record<string, any>) {
+    const res = await fetch(`${API_BASE_URL}/integrations/assessment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  async getExternalAssessment(assessmentId: number) {
+    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}`, {
+      method: 'GET',
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(res);
+  },
+
+  async generateExternalInterviewQuestions(assessmentId: number) {
+    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}/generate-questions`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(res);
+  },
+
+  async generateExternalRecruiterReport(assessmentId: number) {
+    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}/generate-report`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(res);
+  },
 };

@@ -54,6 +54,12 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
   const [selectedCandidateDetail, setSelectedCandidateDetail] = useState<any>(null)
   const [candidateAssessments, setCandidateAssessments] = useState<any[]>([])
   const [candidateEvaluation, setCandidateEvaluation] = useState<any>(null)
+  const [selectedExternalAssessment, setSelectedExternalAssessment] = useState<any>(null)
+  const [importSourceTab, setImportSourceTab] = useState<'manual' | 'import'>('manual')
+  const [externalJsonText, setExternalJsonText] = useState('')
+  const [importingExternal, setImportingExternal] = useState(false)
+  const [generatingQuestions, setGeneratingQuestions] = useState(false)
+  const [generatingReport, setGeneratingReport] = useState(false)
 
   // Rubric Edit States
   const [isEditingRubric, setIsEditingRubric] = useState(false)
@@ -308,8 +314,9 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
       const filtered = allAssessments.filter((a: any) => a.candidate_id === candidateId)
       setCandidateAssessments(filtered)
 
-      // Reset evaluation info
+      // Reset evaluation and external info
       setCandidateEvaluation(null)
+      setSelectedExternalAssessment(null)
       if (filtered.length > 0) {
         // Fetch all evaluations and filter by assessment_id
         try {
@@ -320,6 +327,15 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
           }
         } catch {
           // Evaluation not generated yet
+        }
+
+        if (filtered[0].assessment_source === 'External') {
+          try {
+            const extData = await api.getExternalAssessment(filtered[0].id)
+            setSelectedExternalAssessment(extData)
+          } catch (err) {
+            console.error('Failed to load external assessment details:', err)
+          }
         }
       }
 
@@ -362,6 +378,85 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
       setEvaluationError(err.message || 'Evaluation generation failed')
     } finally {
       setEvaluationLoading(false)
+    }
+  }
+
+  const handleLoadSampleJson = () => {
+    const sample = {
+      "candidate_name": selectedCandidateDetail?.name || "Alex Sharma",
+      "assessment_name": "Software Engineer Assessment",
+      "overall_score": 82,
+      "questions": [
+        {
+          "question": "Graph Traversal",
+          "skill": "Algorithms",
+          "score": 70,
+          "time_taken": 420,
+          "tests_passed": 8,
+          "tests_total": 10
+        },
+        {
+          "question": "SQL Query",
+          "skill": "SQL",
+          "score": 95,
+          "time_taken": 180,
+          "tests_passed": 10,
+          "tests_total": 10
+        }
+      ]
+    }
+    setExternalJsonText(JSON.stringify(sample, null, 2))
+  }
+
+  const handleImportExternalAssessment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedCandidateId) return
+    setImportingExternal(true)
+    try {
+      let parsed = JSON.parse(externalJsonText)
+      parsed.candidate_id = selectedCandidateId
+      
+      const newAssessment = await api.importExternalAssessment(parsed)
+      await viewCandidateDetail(selectedCandidateId)
+      
+      const extData = await api.getExternalAssessment(newAssessment.id)
+      setSelectedExternalAssessment(extData)
+      
+      alert("External assessment imported successfully!")
+    } catch (err: any) {
+      alert("Import failed: " + (err.message || "Invalid JSON syntax"))
+    } finally {
+      setImportingExternal(false)
+    }
+  }
+
+  const handleGenerateQuestions = async (assessmentId: number) => {
+    setGeneratingQuestions(true)
+    try {
+      const data = await api.generateExternalInterviewQuestions(assessmentId)
+      setSelectedExternalAssessment((prev: any) => ({
+        ...prev,
+        interview_questions: data.interview_questions
+      }))
+    } catch (err: any) {
+      alert(err.message || 'Failed to generate interview questions')
+    } finally {
+      setGeneratingQuestions(false)
+    }
+  }
+
+  const handleGenerateReport = async (assessmentId: number) => {
+    setGeneratingReport(true)
+    try {
+      const data = await api.generateExternalRecruiterReport(assessmentId)
+      setSelectedExternalAssessment((prev: any) => ({
+        ...prev,
+        evaluation_report: data.evaluation_report
+      }))
+    } catch (err: any) {
+      alert(err.message || 'Failed to generate evaluation report')
+    } finally {
+      setGeneratingReport(false)
     }
   }
 
@@ -1373,6 +1468,195 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
                     )}
                   </div>
 
+                  {/* External Assessment Details Panel */}
+                  {selectedExternalAssessment && (
+                    <div className="rounded-2xl border border-gray-200/60 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-5 md:p-6 shadow-premium space-y-6">
+                      <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-zinc-900">
+                        <div>
+                          <span className="text-[9px] font-bold text-primary uppercase tracking-widest block">INTEGRATION COMPONENT</span>
+                          <h3 className="text-base font-display font-bold text-zinc-900 dark:text-white flex items-center gap-2 mt-0.5">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            External Assessment: {selectedExternalAssessment.assessment_name}
+                          </h3>
+                          <p className="text-xs text-zinc-400">Imported from HackerRank webhook connector.</p>
+                        </div>
+                        <span className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold font-mono">
+                          Overall Score: {selectedExternalAssessment.overall_score}%
+                        </span>
+                      </div>
+
+                      {/* Question performance table */}
+                      <div className="space-y-3">
+                        <h4 className="font-bold text-zinc-800 dark:text-zinc-200 text-xs text-left">Question-Level Performance</h4>
+                        <div className="overflow-x-auto rounded-xl border border-gray-150 dark:border-zinc-900">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-zinc-50 dark:bg-zinc-900/40 text-zinc-405 dark:text-zinc-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-150 dark:border-zinc-900">
+                                <th className="p-3">Question</th>
+                                <th className="p-3">Skill Category</th>
+                                <th className="p-3 text-center">Score</th>
+                                <th className="p-3 text-center">Tests Passed</th>
+                                <th className="p-3 text-center">Time Taken</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-155 dark:divide-zinc-900 text-zinc-800 dark:text-zinc-205">
+                              {selectedExternalAssessment.questions?.map((q: any, idx: number) => (
+                                <tr key={idx} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10">
+                                  <td className="p-3 font-semibold">{q.question}</td>
+                                  <td className="p-3">
+                                    <span className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                                      {q.skill}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 text-center font-bold font-mono">{q.score}%</td>
+                                  <td className="p-3 text-center font-mono">
+                                    <span className={q.tests_passed === q.tests_total ? 'text-accent' : 'text-amber-500'}>
+                                      {q.tests_passed}
+                                    </span>
+                                    <span className="text-zinc-400">/{q.tests_total}</span>
+                                  </td>
+                                  <td className="p-3 text-center text-zinc-500 dark:text-zinc-400">{Math.floor(q.time_taken / 60)}m {q.time_taken % 60}s</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* AI Copilot Evaluation Actions */}
+                      <div className="pt-4 border-t border-gray-150 dark:border-zinc-900 space-y-4 text-left">
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">AI Evaluation & Recruiter Assistance</h4>
+                          <p className="text-[10px] text-zinc-450 dark:text-zinc-400">Generate targeted interview material and recruiter feedback reports based on this candidate's metrics.</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            onClick={() => handleGenerateQuestions(selectedExternalAssessment.assessment_id)}
+                            disabled={generatingQuestions}
+                            className="bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 px-4 py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow transition-all flex items-center gap-1.5"
+                          >
+                            {generatingQuestions ? 'Generating Questions...' : 'Generate Interview Questions'}
+                          </button>
+                          <button
+                            onClick={() => handleGenerateReport(selectedExternalAssessment.assessment_id)}
+                            disabled={generatingReport}
+                            className="bg-accent hover:bg-accent/90 text-white px-4 py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow transition-all flex items-center gap-1.5"
+                          >
+                            {generatingReport ? 'Generating Report...' : 'Generate Evaluation Report'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Display AI Interview Questions */}
+                      {selectedExternalAssessment.interview_questions && (
+                        <div className="pt-4 border-t border-gray-150 dark:border-zinc-900 text-left space-y-3.5">
+                          <h4 className="font-bold text-zinc-800 dark:text-zinc-200 text-xs flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[9px] font-bold">GEMINI CO-PILOT</span>
+                            Personalized Interview Questions (Tailored)
+                          </h4>
+                          <div className="space-y-3">
+                            {selectedExternalAssessment.interview_questions.map((item: any, idx: number) => (
+                              <div key={idx} className="p-4 rounded-xl border border-zinc-150 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10 text-xs space-y-2 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 px-2 py-0.5 bg-zinc-150 dark:bg-zinc-900 text-[9px] text-zinc-400 dark:text-zinc-550 rounded-bl font-mono">
+                                  {item.question_type}
+                                </div>
+                                <p className="font-bold text-zinc-900 dark:text-white pr-20">Q: {item.question_text}</p>
+                                <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 text-zinc-500 dark:text-zinc-400 text-[11px] leading-relaxed">
+                                  <span className="font-bold text-amber-600 dark:text-amber-500">Why this question?</span> {item.why_this_question}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Display Evidence-based Recruiter Report */}
+                      {selectedExternalAssessment.evaluation_report && (
+                        <div className="pt-4 border-t border-gray-150 dark:border-zinc-900 text-left space-y-4">
+                          <h4 className="font-bold text-zinc-800 dark:text-zinc-200 text-xs flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-accent/10 text-accent text-[9px] font-bold">GEMINI CO-PILOT</span>
+                            Evidence-Backed Evaluation Report
+                          </h4>
+
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900/60 bg-zinc-50 dark:bg-zinc-900/30 space-y-1">
+                              <span className="text-[10px] font-bold text-zinc-450 block uppercase tracking-wide">Overall Recommendation</span>
+                              <span className="text-lg font-display font-extrabold text-accent">
+                                {selectedExternalAssessment.evaluation_report.overall_recommendation}
+                              </span>
+                            </div>
+                            
+                            <div className="p-4 rounded-xl border border-gray-150 dark:border-zinc-900/60 bg-zinc-50 dark:bg-zinc-900/30 space-y-2">
+                              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block">Skill Ratings</span>
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <div>
+                                  <span className="text-zinc-400">Technical: </span>
+                                  <span className="font-bold">{selectedExternalAssessment.evaluation_report.ratings?.technical_strength}</span>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-400">Problem Solving: </span>
+                                  <span className="font-bold">{selectedExternalAssessment.evaluation_report.ratings?.problem_solving}</span>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-400">SQL: </span>
+                                  <span className="font-bold">{selectedExternalAssessment.evaluation_report.ratings?.sql}</span>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-400">Algorithms: </span>
+                                  <span className="font-bold">{selectedExternalAssessment.evaluation_report.ratings?.algorithms}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div className="space-y-1.5">
+                              <span className="font-bold text-zinc-400 block uppercase text-[10px]">Key Strengths</span>
+                              <ul className="list-disc list-inside space-y-1 text-zinc-700 dark:text-zinc-300">
+                                {selectedExternalAssessment.evaluation_report.strengths?.map((s: string, idx: number) => (
+                                  <li key={idx}>{s}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="space-y-1.5">
+                              <span className="font-bold text-zinc-400 block uppercase text-[10px]">Areas for Validation</span>
+                              <ul className="list-disc list-inside space-y-1 text-zinc-700 dark:text-zinc-300">
+                                {selectedExternalAssessment.evaluation_report.areas_for_validation?.map((s: string, idx: number) => (
+                                  <li key={idx}>{s}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 text-xs">
+                            <span className="font-bold text-zinc-400 block uppercase text-[10px]">Suggested Interview Focus</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedExternalAssessment.evaluation_report.suggested_interview_focus?.map((f: string, idx: number) => (
+                                <span key={idx} className="px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 font-semibold">{f}</span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Traceable Evidence block */}
+                          <div className="space-y-2 text-xs">
+                            <span className="font-bold text-zinc-400 block uppercase text-[10px]">Traceable Evidence</span>
+                            <div className="space-y-2">
+                              {selectedExternalAssessment.evaluation_report.evidence_points?.map((item: any, idx: number) => (
+                                <div key={idx} className="p-3 rounded-xl border border-gray-150 dark:border-zinc-900 bg-zinc-50/30 dark:bg-zinc-900/10 space-y-1">
+                                  <p className="font-semibold text-zinc-800 dark:text-zinc-200">&bull; {item.point}</p>
+                                  <div className="text-[10px] text-accent font-semibold bg-accent/5 border border-accent/10 px-2 py-0.5 rounded inline-block font-mono">
+                                    Evidence: {item.evidence}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Recruiter-Only Evaluation View */}
                   {candidateEvaluation && (
                     <div className="rounded-2xl border border-gray-200/60 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-5 md:p-6 shadow-premium space-y-6">
@@ -1486,73 +1770,139 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
 
                 </div>
 
-                {/* Right: Mock Add Assessment Form */}
-                <div className="lg:col-span-4">
-                  <div className="rounded-2xl border border-gray-200/60 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-5 md:p-6 shadow-premium space-y-4">
-                    <h3 className="text-sm font-display font-bold text-zinc-900 dark:text-white">
-                      Enter Assessment Marks
-                    </h3>
+                {/* Right: Mock Add Assessment Form or Import Assessment */}
+                <div className="lg:col-span-4 space-y-4">
+                  <div className="rounded-2xl border border-gray-200/60 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-5 md:p-6 shadow-premium space-y-4 text-xs">
                     
-                    <form onSubmit={handleSaveAssessment} className="space-y-3.5 text-xs text-left">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Round Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={newRound}
-                          onChange={(e) => setNewRound(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Coding Score (0-100)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newScoreCoding}
-                          onChange={(e) => setNewScoreCoding(Number(e.target.value))}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">MCQ Score (0-100)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newScoreMcq}
-                          onChange={(e) => setNewScoreMcq(Number(e.target.value))}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Problem Solving (0-100)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newScoreProblem}
-                          onChange={(e) => setNewScoreProblem(Number(e.target.value))}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Communication (0-100)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newScoreComm}
-                          onChange={(e) => setNewScoreComm(Number(e.target.value))}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                        />
-                      </div>
-
+                    {/* Tab selection */}
+                    <div className="flex border-b border-gray-150 dark:border-zinc-900 pb-2 gap-4">
                       <button
-                        type="submit"
-                        disabled={savingAssessment}
-                        className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                        onClick={() => setImportSourceTab('manual')}
+                        className={`font-display font-bold pb-1 cursor-pointer transition-all ${
+                          importSourceTab === 'manual'
+                            ? 'text-primary border-b-2 border-primary'
+                            : 'text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200'
+                        }`}
                       >
-                        {savingAssessment ? 'Saving...' : 'Save Assessment Scores'}
+                        Manual Scores
                       </button>
-                    </form>
+                      <button
+                        onClick={() => setImportSourceTab('import')}
+                        className={`font-display font-bold pb-1 cursor-pointer transition-all ${
+                          importSourceTab === 'import'
+                            ? 'text-primary border-b-2 border-primary'
+                            : 'text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        External Import
+                      </button>
+                    </div>
+
+                    {importSourceTab === 'manual' ? (
+                      <div>
+                        <h3 className="text-sm font-display font-bold text-zinc-900 dark:text-white mb-3 text-left">
+                          Enter Assessment Marks
+                        </h3>
+                        <form onSubmit={handleSaveAssessment} className="space-y-3.5 text-xs text-left">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Round Name</label>
+                            <input
+                              type="text"
+                              required
+                              value={newRound}
+                              onChange={(e) => setNewRound(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Coding Score (0-100)</label>
+                            <input
+                              type="number"
+                              required
+                              value={newScoreCoding}
+                              onChange={(e) => setNewScoreCoding(Number(e.target.value))}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">MCQ Score (0-100)</label>
+                            <input
+                              type="number"
+                              required
+                              value={newScoreMcq}
+                              onChange={(e) => setNewScoreMcq(Number(e.target.value))}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Problem Solving (0-100)</label>
+                            <input
+                              type="number"
+                              required
+                              value={newScoreProblem}
+                              onChange={(e) => setNewScoreProblem(Number(e.target.value))}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Communication (0-100)</label>
+                            <input
+                              type="number"
+                              required
+                              value={newScoreComm}
+                              onChange={(e) => setNewScoreComm(Number(e.target.value))}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={savingAssessment}
+                            className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                          >
+                            {savingAssessment ? 'Saving...' : 'Save Assessment Scores'}
+                          </button>
+                        </form>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-sm font-display font-bold text-zinc-900 dark:text-white mb-1 text-left">
+                          Import External Assessment
+                        </h3>
+                        <p className="text-[10px] text-zinc-400 mb-3 text-left font-semibold">Import a standardized JSON payload representing external platform assessment results.</p>
+                        
+                        <form onSubmit={handleImportExternalAssessment} className="space-y-3.5 text-left">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">Assessment JSON</label>
+                              <button
+                                type="button"
+                                onClick={handleLoadSampleJson}
+                                className="text-[10px] text-primary font-bold hover:underline cursor-pointer"
+                              >
+                                Load Sample HackerRank JSON
+                              </button>
+                            </div>
+                            <textarea
+                              required
+                              rows={12}
+                              placeholder='Pasted assessment results JSON...'
+                              value={externalJsonText}
+                              onChange={(e) => setExternalJsonText(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white font-mono text-[10px] focus:outline-none resize-none"
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={importingExternal}
+                            className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                          >
+                            {importingExternal ? 'Importing & Analyzing...' : 'Import & Analyze Assessment'}
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -175,3 +175,119 @@ INSTRUCTIONS:
 7. Candidate feedback must NOT see recruiter hiring notes, internal thresholds, confidential company guidelines, other candidates, ranking, internal recommendation, confidence score, internal rubric, or recruiter-only reasoning. Focus purely on their score and constructive ways to improve.
 """
     return _call_gemini_with_fallback(prompt, EvaluationResult)
+
+class GeneratedQuestion(BaseModel):
+    question_type: str = Field(..., description="Type of question: Technical question, Debugging question, Deeper follow-up question, or Skill-validation question")
+    question_text: str = Field(..., description="The actual question to ask the candidate")
+    why_this_question: str = Field(..., description="Explanation of why this question is being asked, explicitly referring to the candidate's actual assessment performance (e.g. scored 70% in graph traversal, failed 2/10 test cases, etc.)")
+
+
+class InterviewQuestionsResult(BaseModel):
+    questions: list[GeneratedQuestion]
+
+
+class RecruiterReportRating(BaseModel):
+    technical_strength: str = Field(..., description="Technical assessment level, e.g. Strong, Moderate, Weak")
+    problem_solving: str = Field(..., description="Problem solving level, e.g. Strong, Moderate, Weak")
+    sql: str = Field(..., description="SQL level, e.g. Excellent, Moderate, Weak")
+    algorithms: str = Field(..., description="Algorithms level, e.g. Excellent, Moderate, Weak")
+
+
+class TraceableEvidence(BaseModel):
+    point: str = Field(..., description="A key recommendation/statement")
+    evidence: str = Field(..., description="Traceable evidence from the assessment data supporting the point (e.g. scored 95% in SQL and passed 10/10 test cases)")
+
+
+class RecruiterReportResult(BaseModel):
+    overall_recommendation: str = Field(..., description="Recommendation (e.g. Proceed to Technical Interview, Borderline, Reject)")
+    ratings: RecruiterReportRating
+    strengths: list[str] = Field(..., description="Key strengths found in assessment")
+    areas_for_validation: list[str] = Field(..., description="Key areas of validation for the recruiter")
+    suggested_interview_focus: list[str] = Field(..., description="Suggested focus topics for the interview based on the assessment performance")
+    evidence_points: list[TraceableEvidence] = Field(..., description="Traceable evidence linking evaluation points to concrete assessment metrics")
+
+
+def generate_external_evaluation(assessment: Assessment, external_assessment):
+    candidate = assessment.candidate
+    if not candidate:
+        raise ValueError("Assessment does not have an associated candidate.")
+    
+    campaign = candidate.campaign
+    if not campaign:
+        raise ValueError("Candidate is not associated with any campaign.")
+        
+    rubric = campaign.evaluation_rubric
+    if not rubric:
+        raise ValueError("Evaluation rubric has not been generated for this campaign yet. Please generate the rubric first.")
+        
+    if campaign.rubric_status != "approved":
+        raise ValueError("Rubric not approved")
+
+    prompt = f"""
+You are an experienced technical recruiter evaluating a candidate for the following campaign.
+We have imported an external coding assessment (HackerRank) showing question-level data.
+
+Job Description:
+{campaign.job_description or "Not Provided"}
+
+Recruiter Hiring Notes:
+{campaign.hiring_notes or "Not Provided"}
+
+Approved Hiring Rubric:
+{json.dumps(rubric, indent=2)}
+
+External Coding Assessment Details:
+- Candidate Name: {external_assessment.candidate_name}
+- Assessment Name: {external_assessment.assessment_name}
+- Overall Score: {external_assessment.overall_score}%
+- Question-level Performance:
+{json.dumps(external_assessment.questions, indent=2)}
+
+INSTRUCTIONS:
+1. Evaluate this candidate ONLY according to the approved hiring rubric.
+2. Separate objective assessment performance from the final recommendation.
+3. Calculate technical_rating, problem_solving_rating, and communication_rating (from 1 to 10) based on the evidence.
+4. Highlight strengths and weaknesses relative to the rubric requirements.
+5. Identify any missing rubric skills or mandatory requirements not met.
+6. Generate constructive, candidate-friendly feedback (personalized_feedback and suggested_topics) based ONLY on their own performance.
+7. Candidate feedback must NOT see recruiter hiring notes, internal thresholds, confidential company guidelines, other candidates, ranking, internal recommendation, confidence score, internal rubric, or recruiter-only reasoning. Focus purely on their score and constructive ways to improve.
+"""
+    return _call_gemini_with_fallback(prompt, EvaluationResult)
+
+
+def generate_interview_questions(assessment: Assessment, external_assessment) -> dict:
+    prompt = f"""
+You are an expert technical interviewer.
+Analyze the candidate's performance on the external technical assessment (HackerRank) and generate personalized interview questions to investigate their reasoning, problem solving, and debugging abilities during the upcoming technical interview.
+
+Candidate Name: {external_assessment.candidate_name}
+Assessment Name: {external_assessment.assessment_name}
+Overall Score: {external_assessment.overall_score}%
+Question details:
+{json.dumps(external_assessment.questions, indent=2)}
+
+INSTRUCTIONS:
+1. Focus questions on areas of lower performance, incorrect test cases, or slow time taken in specific skills.
+2. Generate a mixture of: Technical question, Debugging question, Deeper follow-up question, and Skill-validation question.
+3. Every question must have a 'why_this_question' field explaining the exact data point from the assessment that triggered it (e.g. 'Candidate scored 70% in Algorithms and passed 8/10 test cases').
+"""
+    return _call_gemini_with_fallback(prompt, InterviewQuestionsResult)
+
+
+def generate_recruiter_report(assessment: Assessment, external_assessment) -> dict:
+    prompt = f"""
+You are an expert technical recruiter.
+Create an evidence-based recruiter report for the following candidate based on their external assessment performance.
+
+Candidate Name: {external_assessment.candidate_name}
+Assessment Name: {external_assessment.assessment_name}
+Overall Score: {external_assessment.overall_score}%
+Question details:
+{json.dumps(external_assessment.questions, indent=2)}
+
+INSTRUCTIONS:
+1. Provide an overall recommendation and fill in the ratings for technical, problem-solving, SQL, and algorithms.
+2. List key strengths and areas for validation.
+3. For every key point, provide direct traceable evidence from the assessment data (e.g. 'Candidate scored 95% in SQL and passed 10/10 test cases'). Do not make unsupported general statements.
+"""
+    return _call_gemini_with_fallback(prompt, RecruiterReportResult)

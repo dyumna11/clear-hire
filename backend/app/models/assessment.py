@@ -74,8 +74,14 @@ class Assessment(Base):
         back_populates="assessments",
     )
     evaluation = relationship(
-    "Evaluation",
-    back_populates="assessment",
-    uselist=False,
-    cascade="all, delete-orphan",
-)
+        "Evaluation",
+        back_populates="assessment",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    external_assessment = relationship(
+        "ExternalAssessment",
+        back_populates="assessment",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )

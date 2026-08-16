@@ -1,12 +1,13 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from app.services.ai_evaluation_service import generate_evaluation
+from app.services.ai_evaluation_service import generate_evaluation, generate_external_evaluation
 
 from app.models.assessment import Assessment
 from app.models.campaign import Campaign
 from app.models.candidate import Candidate
 from app.models.evaluation import Evaluation
 from app.models.recruiter import Recruiter
+from app.models.external_assessment import ExternalAssessment
 
 from app.repositories.evaluation_repository import (
     create_evaluation,
@@ -71,7 +72,20 @@ def create_new_evaluation(
         )
 
     # Generate evaluation
-    generated = generate_evaluation(assessment)
+    if assessment.assessment_source == "External":
+        ext_assess = (
+            db.query(ExternalAssessment)
+            .filter(ExternalAssessment.assessment_id == assessment.id)
+            .first()
+        )
+        if not ext_assess:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="External assessment details not found.",
+            )
+        generated = generate_external_evaluation(assessment, ext_assess)
+    else:
+        generated = generate_evaluation(assessment)
 
     # Get rubric version used
     rubric_version = campaign.rubric_version or 0
