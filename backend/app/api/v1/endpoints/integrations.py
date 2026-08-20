@@ -64,20 +64,24 @@ def import_assessment(
             detail="Candidate not found",
         )
 
+    candidate_id = candidate.id
+
     # Check for duplicate external assessment for this candidate and round name
     existing = (
         db.query(Assessment)
         .filter(
-            Assessment.candidate_id == candidate.id,
+            Assessment.candidate_id == candidate_id,
             Assessment.assessment_round == import_data.assessment_name,
         )
         .first()
     )
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An assessment for this round name already exists.",
-        )
+        if existing.evaluation:
+            db.delete(existing.evaluation)
+        if existing.external_assessment:
+            db.delete(existing.external_assessment)
+        db.delete(existing)
+        db.commit()
 
     # Extract score averages by simple category mapping to fit generic rubric
     coding_skills = ["coding", "algorithms", "data structures", "graphs", "trees"]
@@ -93,7 +97,7 @@ def import_assessment(
     comm_avg = 80  # Default communication score fallback for automated import
 
     assessment = Assessment(
-        candidate_id=candidate.id,
+        candidate_id=candidate_id,
         assessment_round=import_data.assessment_name,
         assessment_source="External",
         status="Completed",

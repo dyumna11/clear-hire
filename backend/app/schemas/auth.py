@@ -2,10 +2,12 @@ from pydantic import BaseModel, EmailStr
 
 
 class RecruiterRegister(BaseModel):
-    company_id: int
     name: str
     email: EmailStr
     password: str
+    company_id: int | None = None
+    company_name: str | None = None
+    company_industry: str | None = None
 
 
 class RecruiterLogin(BaseModel):

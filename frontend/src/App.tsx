@@ -18,6 +18,7 @@ export default function App() {
   // App views: 'landing', 'recruiter', or 'candidate-feedback'
   const [view, setView] = useState<'landing' | 'recruiter' | 'candidate-feedback'>('landing')
   const [candidateRouteParams, setCandidateRouteParams] = useState<{ assessmentId: number; token: string } | null>(null)
+  const [demoTriggered, setDemoTriggered] = useState(false)
 
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -55,11 +56,19 @@ export default function App() {
 
   // Handle routing navigation callback triggers
   const handleGoToDashboard = () => {
+    setDemoTriggered(false)
+    setView('recruiter')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleGoToDemo = () => {
+    setDemoTriggered(true)
     setView('recruiter')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleGoToHome = () => {
+    setDemoTriggered(false)
     setView('landing')
     window.history.pushState({}, '', '/')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -81,6 +90,8 @@ export default function App() {
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
         onGoToHome={handleGoToHome}
+        demoTriggered={demoTriggered}
+        clearDemoTriggered={() => setDemoTriggered(false)}
       />
     )
   }
@@ -92,12 +103,16 @@ export default function App() {
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
         onGoToDashboard={handleGoToDashboard}
+        onGoToDemo={handleGoToDemo}
       />
 
       {/* Main Sections */}
       <main>
         {/* Hero Section containing headline, report preview mockup and buttons */}
-        <Hero onGoToDashboard={handleGoToDashboard} />
+        <Hero
+          onGoToDashboard={handleGoToDashboard}
+          onGoToDemo={handleGoToDemo}
+        />
 
         {/* Why Now Section displaying critical market evaluation stats */}
         <WhyNow />

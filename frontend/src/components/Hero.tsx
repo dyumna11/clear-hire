@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import ReportPreviewMockup from './ReportPreviewMockup'
 
 interface HeroProps {
   onGoToDashboard: () => void
+  onGoToDemo: () => void
 }
 
-export default function Hero({ onGoToDashboard }: HeroProps) {
+export default function Hero({ onGoToDashboard, onGoToDemo }: HeroProps) {
   return (
     <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-white dark:bg-zinc-950">
       {/* Background decoration */}
@@ -72,11 +73,11 @@ export default function Hero({ onGoToDashboard }: HeroProps) {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
         >
           <button
-            onClick={onGoToDashboard}
+            onClick={onGoToDemo}
             type="button"
             className="w-full sm:w-auto relative group overflow-hidden bg-primary hover:bg-primary-hover text-white font-medium px-8 py-4 rounded-2xl transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
-            <span>Request Demo</span>
+            <span>Try Demo</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
           
@@ -85,8 +86,7 @@ export default function Hero({ onGoToDashboard }: HeroProps) {
             type="button"
             className="w-full sm:w-auto font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white bg-gray-50 dark:bg-zinc-900/60 border border-gray-200/60 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 px-8 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer text-sm"
           >
-            <Play className="w-3.5 h-3.5 fill-current text-zinc-500" />
-            <span>View Candidate Report</span>
+            <span>Recruiter Portal</span>
           </button>
         </motion.div>
 

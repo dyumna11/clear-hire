@@ -38,8 +38,27 @@ def register_recruiter(
             detail="Email already registered",
         )
 
+    # Resolve company_id
+    company_id = recruiter.company_id
+    if not company_id:
+        if not recruiter.company_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Either company_id or company_name must be provided",
+            )
+        from app.models.company import Company
+        db_company = Company(
+            name=recruiter.company_name,
+            industry=recruiter.company_industry or "Technology",
+            website=None,
+        )
+        db.add(db_company)
+        db.commit()
+        db.refresh(db_company)
+        company_id = db_company.id
+
     db_recruiter = Recruiter(
-        company_id=recruiter.company_id,
+        company_id=company_id,
         name=recruiter.name,
         email=recruiter.email,
         password_hash=hash_password(
@@ -48,10 +67,22 @@ def register_recruiter(
         role="recruiter",
     )
 
-    return create_recruiter(
+    created_recruiter = create_recruiter(
         db,
         db_recruiter,
     )
+
+    token = create_access_token(
+        {
+            "sub": created_recruiter.email,
+            "id": created_recruiter.id,
+        }
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+    }
 
 
 def login_recruiter(

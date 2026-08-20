@@ -49,13 +49,32 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        company_id: Number(formValues.company_id),
+        company_name: formValues.company_name,
+        company_industry: formValues.company_industry,
         name: formValues.name,
         email: formValues.email,
         password: formValues.password,
       }),
     });
-    return handleResponse(res);
+    const data = await handleResponse(res);
+    if (data.access_token) {
+      localStorage.setItem('token', data.access_token);
+    }
+    return data;
+  },
+
+  async demoLogin() {
+    const res = await fetch(`${API_BASE_URL}/auth/demo-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await handleResponse(res);
+    if (data.access_token) {
+      localStorage.setItem('token', data.access_token);
+    }
+    return data;
   },
 
   async getMe() {

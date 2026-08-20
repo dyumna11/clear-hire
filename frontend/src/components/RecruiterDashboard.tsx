@@ -24,9 +24,17 @@ interface RecruiterDashboardProps {
   darkMode: boolean
   toggleDarkMode: () => void
   onGoToHome: () => void
+  demoTriggered?: boolean
+  clearDemoTriggered?: () => void
 }
 
-export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHome }: RecruiterDashboardProps) {
+export default function RecruiterDashboard({
+  darkMode,
+  toggleDarkMode,
+  onGoToHome,
+  demoTriggered,
+  clearDemoTriggered
+}: RecruiterDashboardProps) {
   const [isEmptyState, setIsEmptyState] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -39,7 +47,8 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [companyId, setCompanyId] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [companyIndustry, setCompanyIndustry] = useState('')
   const [recruiterInfo, setRecruiterInfo] = useState<any>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
@@ -95,6 +104,7 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
 
   // Notifications dropdown simulation
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const notifications = [
     { text: 'Alex Rivera viewed transparency report', time: '10 min ago' },
     { text: 'Sarah Jenkins accepted offer letter', time: '4 hours ago' },
@@ -122,6 +132,15 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
     }
   }, [token])
 
+  useEffect(() => {
+    if (demoTriggered) {
+      handleTryDemo()
+      if (clearDemoTriggered) {
+        clearDemoTriggered()
+      }
+    }
+  }, [demoTriggered])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthLoading(true)
@@ -144,11 +163,29 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
     setAuthLoading(true)
     setAuthError(null)
     try {
-      await api.register({ company_id: companyId, name, email, password })
-      setAuthView('login')
-      setAuthError('Registration successful. Please log in.')
+      await api.register({ company_name: companyName, company_industry: companyIndustry, name, email, password })
+      const me = await api.getMe()
+      setRecruiterInfo(me)
+      setToken(localStorage.getItem('token'))
+      setSubView('overview')
     } catch (err: any) {
       setAuthError(err.message || 'Registration failed')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleTryDemo = async () => {
+    setAuthLoading(true)
+    setAuthError(null)
+    try {
+      await api.demoLogin()
+      const me = await api.getMe()
+      setRecruiterInfo(me)
+      setToken(localStorage.getItem('token'))
+      setSubView('overview')
+    } catch (err: any) {
+      setAuthError(err.message || 'Demo login failed')
     } finally {
       setAuthLoading(false)
     }
@@ -516,14 +553,25 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
             {authView === 'register' && (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Company ID</label>
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Company Name</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    value={companyId}
-                    onChange={(e) => setCompanyId(e.target.value)}
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
                     className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
-                    placeholder="e.g. 1"
+                    placeholder="e.g. OpenAI"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Company Industry</label>
+                  <input
+                    type="text"
+                    required
+                    value={companyIndustry}
+                    onChange={(e) => setCompanyIndustry(e.target.value)}
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none"
+                    placeholder="e.g. Technology"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -573,15 +621,32 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
             </button>
           </form>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-2 space-y-4">
             <button
               onClick={() => {
                 setAuthView(authView === 'login' ? 'register' : 'login')
                 setAuthError(null)
               }}
+              type="button"
               className="text-xs text-primary hover:underline cursor-pointer font-semibold"
             >
               {authView === 'login' ? "Don't have an account? Register" : 'Already have an account? Login'}
+            </button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
+              <span className="flex-shrink mx-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Or</span>
+              <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleTryDemo}
+              disabled={authLoading}
+              className="w-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-accent animate-pulse" />
+              <span>Explore Demo Account</span>
             </button>
           </div>
         </div>
@@ -709,8 +774,52 @@ export default function RecruiterDashboard({ darkMode, toggleDarkMode, onGoToHom
               </AnimatePresence>
             </div>
 
-            <div className="w-8.5 h-8.5 rounded-full bg-zinc-150 dark:bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-200 border border-gray-100 dark:border-zinc-900">
-              {recruiterInfo?.name?.substring(0, 2) || 'TA'}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                type="button"
+                className="w-8.5 h-8.5 rounded-full bg-zinc-150 dark:bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-200 border border-gray-100 dark:border-zinc-900 hover:border-primary/25 cursor-pointer focus:outline-none transition-all"
+                aria-label="User profile menu"
+              >
+                {recruiterInfo?.name?.substring(0, 2) || 'TA'}
+              </button>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <>
+                    <div className="fixed inset-0 z-35" onClick={() => setShowProfileMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 rounded-2xl border border-gray-150 dark:border-zinc-900 bg-white dark:bg-zinc-950 shadow-premium p-4 z-40 text-left space-y-3"
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-zinc-900 dark:text-white leading-tight">
+                          {recruiterInfo?.name || 'Recruiter'}
+                        </div>
+                        <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">
+                          {recruiterInfo?.email || 'recruiter@company.com'}
+                        </div>
+                      </div>
+                      
+                      <div className="border-t border-gray-100 dark:border-zinc-900/60 pt-2">
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false)
+                            handleLogout()
+                          }}
+                          type="button"
+                          className="w-full text-left text-xs font-semibold text-red-500 hover:text-red-650 hover:bg-red-50/10 dark:hover:bg-red-950/20 py-1.5 px-2 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Log Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>

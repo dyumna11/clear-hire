@@ -290,7 +290,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
         className="relative w-full max-w-6xl rounded-3xl border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-premium overflow-hidden text-left grid grid-cols-1 lg:grid-cols-12 h-[90vh]"
       >
         {/* Left Column: Form Setup (col-span-7) */}
-        <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-gray-100 dark:border-zinc-900/60 no-scrollbar">
+        <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between border-r border-gray-100 dark:border-zinc-900/60 h-full overflow-hidden">
           
           {/* Header Progress indicator */}
           <div className="space-y-6">
@@ -336,7 +336,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onCreate }: Creat
           </div>
 
           {/* Core steps content areas */}
-          <div className="my-8 flex-1 min-h-[40vh]">
+          <div className="my-6 flex-1 overflow-y-auto pr-1 no-scrollbar">
             <AnimatePresence mode="wait">
               
               {/* Step 1: Details */}

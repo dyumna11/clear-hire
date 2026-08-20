@@ -6,9 +6,10 @@ interface NavbarProps {
   darkMode: boolean
   toggleDarkMode: () => void
   onGoToDashboard: () => void
+  onGoToDemo: () => void
 }
 
-export default function Navbar({ darkMode, toggleDarkMode, onGoToDashboard }: NavbarProps) {
+export default function Navbar({ darkMode, toggleDarkMode, onGoToDashboard, onGoToDemo }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -84,6 +85,14 @@ export default function Navbar({ darkMode, toggleDarkMode, onGoToDashboard }: Na
           <ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           
           <button
+            onClick={onGoToDemo}
+            type="button"
+            className="text-sm font-semibold text-accent hover:text-accent/80 transition-colors px-3 py-2 cursor-pointer"
+          >
+            Try Demo
+          </button>
+
+          <button
             onClick={onGoToDashboard}
             type="button"
             className="text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-primary dark:hover:text-primary transition-colors px-3 py-2 cursor-pointer"
@@ -136,6 +145,16 @@ export default function Navbar({ darkMode, toggleDarkMode, onGoToDashboard }: Na
         </nav>
 
         <div className="flex flex-col gap-4 mt-auto">
+          <button 
+            onClick={() => {
+              setIsOpen(false)
+              onGoToDemo()
+            }} 
+            className="w-full text-center font-medium bg-zinc-50 dark:bg-zinc-900 text-accent py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 transition-colors cursor-pointer"
+          >
+            Try Demo
+          </button>
+
           <button 
             onClick={() => {
               setIsOpen(false)
