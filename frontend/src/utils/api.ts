@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('token');
@@ -28,7 +28,7 @@ export const api = {
     formData.append('username', formValues.email);
     formData.append('password', formValues.password);
 
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -43,7 +43,7 @@ export const api = {
   },
 
   async register(formValues: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export const api = {
   },
 
   async demoLogin() {
-    const res = await fetch(`${API_BASE_URL}/auth/demo-login`, {
+    const res = await fetch(`${API_URL}/auth/demo-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export const api = {
   },
 
   async getMe() {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    const res = await fetch(`${API_URL}/auth/me`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -89,7 +89,7 @@ export const api = {
 
   // Campaigns
   async getCampaigns() {
-    const res = await fetch(`${API_BASE_URL}/campaigns/`, {
+    const res = await fetch(`${API_URL}/campaigns/`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -99,7 +99,7 @@ export const api = {
   },
 
   async getCampaign(campaignId: number) {
-    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
+    const res = await fetch(`${API_URL}/campaigns/${campaignId}`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -109,7 +109,7 @@ export const api = {
   },
 
   async createCampaign(payload: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/campaigns/`, {
+    const res = await fetch(`${API_URL}/campaigns/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -128,7 +128,7 @@ export const api = {
   },
 
   async generateRubric(campaignId: number) {
-    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/generate-rubric`, {
+    const res = await fetch(`${API_URL}/campaigns/${campaignId}/generate-rubric`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -138,7 +138,7 @@ export const api = {
   },
 
   async updateRubric(campaignId: number, rubric: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/rubric`, {
+    const res = await fetch(`${API_URL}/campaigns/${campaignId}/rubric`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ export const api = {
   },
 
   async approveRubric(campaignId: number) {
-    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/rubric/approve`, {
+    const res = await fetch(`${API_URL}/campaigns/${campaignId}/rubric/approve`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -161,7 +161,7 @@ export const api = {
 
   // Candidates
   async getCandidates(campaignId: number) {
-    const res = await fetch(`${API_BASE_URL}/candidates/campaign/${campaignId}`, {
+    const res = await fetch(`${API_URL}/candidates/campaign/${campaignId}`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -171,7 +171,7 @@ export const api = {
   },
 
   async createCandidate(payload: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/candidates/`, {
+    const res = await fetch(`${API_URL}/candidates/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ export const api = {
 
   // Assessments
   async createAssessment(payload: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/assessments/`, {
+    const res = await fetch(`${API_URL}/assessments/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -211,7 +211,7 @@ export const api = {
   },
 
   async getAssessments() {
-    const res = await fetch(`${API_BASE_URL}/assessments/`, {
+    const res = await fetch(`${API_URL}/assessments/`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -222,7 +222,7 @@ export const api = {
 
   // Evaluations
   async generateEvaluation(assessmentId: number) {
-    const res = await fetch(`${API_BASE_URL}/evaluations/`, {
+    const res = await fetch(`${API_URL}/evaluations/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ export const api = {
   },
 
   async getEvaluation(evaluationId: number) {
-    const res = await fetch(`${API_BASE_URL}/evaluations/${evaluationId}`, {
+    const res = await fetch(`${API_URL}/evaluations/${evaluationId}`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -246,7 +246,7 @@ export const api = {
   },
 
   async getEvaluations() {
-    const res = await fetch(`${API_BASE_URL}/evaluations/`, {
+    const res = await fetch(`${API_URL}/evaluations/`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -257,7 +257,7 @@ export const api = {
 
   // Feedback Tokens
   async generateFeedbackToken(assessmentId: number) {
-    const res = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/feedback-token`, {
+    const res = await fetch(`${API_URL}/assessments/${assessmentId}/feedback-token`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -268,7 +268,7 @@ export const api = {
 
   // Candidate Feedback View
   async getCandidateFeedback(assessmentId: number, token: string) {
-    const res = await fetch(`${API_BASE_URL}/candidate/assessments/${assessmentId}/feedback?token=${encodeURIComponent(token)}`, {
+    const res = await fetch(`${API_URL}/candidate/assessments/${assessmentId}/feedback?token=${encodeURIComponent(token)}`, {
       method: 'GET',
     });
     return handleResponse(res);
@@ -276,7 +276,7 @@ export const api = {
 
   // Integrations / External Assessments
   async importExternalAssessment(payload: Record<string, any>) {
-    const res = await fetch(`${API_BASE_URL}/integrations/assessment`, {
+    const res = await fetch(`${API_URL}/integrations/assessment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export const api = {
   },
 
   async getExternalAssessment(assessmentId: number) {
-    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}`, {
+    const res = await fetch(`${API_URL}/integrations/assessment/${assessmentId}`, {
       method: 'GET',
       headers: {
         ...getAuthHeaders(),
@@ -298,7 +298,7 @@ export const api = {
   },
 
   async generateExternalInterviewQuestions(assessmentId: number) {
-    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}/generate-questions`, {
+    const res = await fetch(`${API_URL}/integrations/assessment/${assessmentId}/generate-questions`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
@@ -308,7 +308,7 @@ export const api = {
   },
 
   async generateExternalRecruiterReport(assessmentId: number) {
-    const res = await fetch(`${API_BASE_URL}/integrations/assessment/${assessmentId}/generate-report`, {
+    const res = await fetch(`${API_URL}/integrations/assessment/${assessmentId}/generate-report`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
